@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+DIR="$(dirname $(dirname ${0}))" # Get root directory.
+
+. "${DIR}/scripts/git.sh"
+
+clean_stale_branches $*
