@@ -1,11 +1,13 @@
 #!/bin/sh
 
+set -e
+
 # Original: https://gist.github.com/chrisdarroch/7018927
 
-# check for where the latest version of IDEA is installed
-IDEA=`ls -1d /Applications/IntelliJ\ * | tail -n1`
-
 function idea {
+  # check for where the latest version of IDEA is installed
+  IDEA=`ls -1d /Applications/IntelliJ\ * | tail -n1`
+  
   wd=`pwd`
   # were we given a directory?
   if [ -d "$1" ]; then

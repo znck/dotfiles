@@ -3,9 +3,9 @@
 set -e
 
 # stringify wraps all arguments in quotes.
-function stringify {
+function _stringify {
   local input="$@"
-  
+
   input="${input//\"/\\\"}"
   input="${input//\\/\\\\}"
 
@@ -44,9 +44,9 @@ function aliasthat {
 
   if [ "${command}" =~ '\$[{]?(@|\*|[0-9]+)[}]?' ]; then
     echo "function __${1}__ { "${command}" }" >> "${ALIAS_TARGET}"
-    echo "alias ${1}=$(stringify __${1}__)" >> "${ALIAS_TARGET}"
+    echo "alias ${1}=$(_stringify __${1}__)" >> "${ALIAS_TARGET}"
   else 
-    echo "alias ${1}=$(stringify ${command})" >> "${ALIAS_TARGET}"
+    echo "alias ${1}=$(_stringify ${command})" >> "${ALIAS_TARGET}"
   fi
   
   . "${ALIAS_TARGET}"

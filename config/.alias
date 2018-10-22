@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+alias wifi="wifi-password -q"
+alias s="git status"
