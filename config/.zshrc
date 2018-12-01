@@ -28,7 +28,7 @@ ZSH_THEME="robbyrussell"
 export UPDATE_ZSH_DAYS=13
 
 # enable command auto-correction.
-ENABLE_CORRECTION="true"
+ENABLE_CORRECTION="false"
 
 # display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
@@ -69,7 +69,7 @@ export LANG=en_US.UTF-8
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
-  export EDITOR='mvim'
+  export EDITOR='vim'
 fi
 
 # Compilation flags
@@ -89,4 +89,3 @@ alias ohmyzsh="code ~/.oh-my-zsh"
 
 # NVM
 export NVM_DIR="$HOME/.nvm"
-. "/usr/local/opt/nvm/nvm.sh"

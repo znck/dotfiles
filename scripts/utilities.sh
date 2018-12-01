@@ -12,8 +12,3 @@ function keep_running {
 }
 
 alias keep-running=keep_running
-
-alias vim="nvim"
-alias vi="nvim"
-alias v="nvim"
-alias oldvim="\vim"

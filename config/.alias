@@ -1,4 +1,19 @@
 #!/usr/bin/env sh
 
 alias wifi="wifi-password -q"
+#compdef wifi="wifi-password"
 alias s="git status"
+#compdef s="git"
+alias n="pnpm"
+#compdef n="pnpm"
+alias ns="n --shamefully-flatten"
+#compdef ns="pnpm"
+alias dotfiles="code /Users/znck/Workspace/znck/dotfiles"
+alias recommit="git commit --amend --no-edit"
+#compdef recommit="git"
+alias ds="docker stack"
+#compdef ds="docker"
+alias current-branch="git rev-parse --abbrev-ref HEAD"
+#compdef current-branch=git
+alias push="git push origin $(current-branch)"
+#compdef push=git

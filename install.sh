@@ -15,7 +15,7 @@ echo ""
 command -v brew >/dev/null 2>&1 || /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 # Install tools
-PACKAGES="zsh nvm hub youtube-dl htop howdoi yarn wifi-password"
+PACKAGES="zsh node nvm hub youtube-dl htop howdoi yarn wifi-password"
 
 for p in $(brew list); do
 	PACKAGES=${PACKAGES//$p/}

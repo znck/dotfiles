@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -e
 
@@ -42,11 +42,13 @@ function aliasthat {
     return 1
   fi
 
-  if [ "${command}" =~ '\$[{]?(@|\*|[0-9]+)[}]?' ]; then
+  if [[ "${command}" =~ '\$[{]?(@|\*|[0-9]+)[}]?' ]]; then
     echo "function __${1}__ { "${command}" }" >> "${ALIAS_TARGET}"
     echo "alias ${1}=$(_stringify __${1}__)" >> "${ALIAS_TARGET}"
+    echo "#compdef ${1}=$(echo ${command} | awk '{print $1;}')" >> "${ALIAS_TARGET}"
   else 
     echo "alias ${1}=$(_stringify ${command})" >> "${ALIAS_TARGET}"
+    echo "#compdef ${1}=$(echo ${command} | awk '{print $1;}')" >> "${ALIAS_TARGET}"
   fi
   
   . "${ALIAS_TARGET}"
