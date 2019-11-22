@@ -5,8 +5,7 @@ alias wifi="wifi-password -q"
 alias s="git status"
 #compdef s="git"
 alias n="pnpm"
-#compdef n="pnpm"
-alias ns="n --shamefully-flatten"
+#compdef n="npm"
 #compdef ns="pnpm"
 alias dotfiles="code /Users/znck/Workspace/znck/dotfiles"
 alias recommit="git commit --amend --no-edit"
@@ -15,7 +14,25 @@ alias ds="docker stack"
 #compdef ds="docker"
 alias current-branch="git rev-parse --abbrev-ref HEAD"
 #compdef current-branch=git
-alias push="git push origin $(current-branch)"
+function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
+alias push="__push__"
 #compdef push=git
 function __who-is-using__ { lsof -i :$1 }
 alias who-is-using="__who-is-using__"
+alias ni="pnpm install"
+#compdef ni=npm
+alias nr="pnpm run"
+#compdef nr=npm
+alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
+#compdef p=prettier
+function __steal-book__ { node /Users/znck/Workspace/Experiments/SafariBooks-Downloader/lib/cli/index.js -b $1 -o /Users/znck/Workspace/Experiments/SafariBooks-Downloader/download3.epub && open /Users/znck/Workspace/Experiments/SafariBooks-Downloader/download3.epub }
+alias steal-book="__steal-book__"
+#compdef steal-book=node
+
+function __jssize__ { cat $1 | terser -c -m | gzip -c9n | wc -c }
+alias jssize="__jssize__"
+#compdef jssize=cat
+alias nri="pnpm recursive install"
+#compdef nri=pnpm
+alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
+#compdef copy-ssh-key=cat

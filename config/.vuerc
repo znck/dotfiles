@@ -1,5 +1,5 @@
 {
-  "packageManager": "npm",
+  "packageManager": "pnpm",
   "useTaobaoRegistry": false,
   "presets": {
     "JavaScript Application": {
@@ -20,6 +20,27 @@
       "routerHistoryMode": true,
       "vuex": true,
       "cssPreprocessor": "stylus"
+    },
+    "PWA": {
+      "useConfigFiles": true,
+      "plugins": {
+        "@vue/cli-plugin-babel": {},
+        "@vue/cli-plugin-pwa": {},
+        "@vue/cli-plugin-eslint": {
+          "config": "prettier",
+          "lintOn": [
+            "commit"
+          ]
+        },
+        "@vue/cli-plugin-unit-jest": {},
+        "@vue/cli-plugin-e2e-cypress": {}
+      },
+      "router": true,
+      "routerHistoryMode": true,
+      "vuex": true,
+      "cssPreprocessor": "dart-sass"
     }
-  }
+  },
+  "latestVersion": "4.0.4",
+  "lastChecked": 1571611726949
 }
