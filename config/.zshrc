@@ -1,3 +1,5 @@
+export ZSH_DISABLE_COMPFIX=true
+
 export DOTFILES="$HOME/Workspace/znck/dotfiles"
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -83,7 +85,6 @@ export SSH_KEY_PATH="~/.ssh/rsa_id"
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
 # For a full list of active aliases, run `alias`.
 source $HOME/.alias
-alias code="code-insiders"
 alias zshconfig="code ~/.zshrc"
 alias ohmyzsh="code ~/.oh-my-zsh"
 
