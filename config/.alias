@@ -36,3 +36,7 @@ alias nri="pnpm recursive install"
 #compdef nri=pnpm
 alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
 #compdef copy-ssh-key=cat
+function __dotenv__ { export $(grep -v '^#' .env | xargs) }
+alias dotenv="__dotenv__"
+function __dotenv-unset__ { unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs) }
+alias dotenv-unset="__dotenv-unset__"
