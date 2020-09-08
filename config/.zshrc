@@ -58,7 +58,7 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
-source $DOTFILES/load.sh
+source $HOME/.dotfiles/load.sh
 
 # User configuration
 
@@ -90,6 +90,8 @@ alias ohmyzsh="code ~/.oh-my-zsh"
 
 # NVM
 export NVM_DIR="$HOME/.nvm"
+[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"
 
 # Rust
 export PATH="$HOME/.cargo/bin:$PATH"

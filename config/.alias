@@ -1,42 +1,57 @@
 #!/usr/bin/env sh
 
+DIR="$(dirname ${0})" # Get script directory.
+
 alias wifi="wifi-password -q"
 #compdef wifi="wifi-password"
+
 alias s="git status"
 #compdef s="git"
+
 alias n="pnpm"
 #compdef n="npm"
-#compdef ns="pnpm"
-alias dotfiles="code /Users/znck/Workspace/znck/dotfiles"
+
+alias dotfiles="code ${DIR}"
+
 alias recommit="git commit --amend --no-edit"
 #compdef recommit="git"
+
 alias ds="docker stack"
 #compdef ds="docker"
+
 alias current-branch="git rev-parse --abbrev-ref HEAD"
 #compdef current-branch=git
+
 function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
 alias push="__push__"
 #compdef push=git
+
 function __who-is-using__ { lsof -i :$1 }
 alias who-is-using="__who-is-using__"
+
 alias ni="pnpm install"
 #compdef ni=npm
+
 alias nr="pnpm run"
 #compdef nr=npm
+
 alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
 #compdef p=prettier
-function __steal-book__ { node /Users/znck/Workspace/Experiments/SafariBooks-Downloader/lib/cli/index.js -b $1 -o /Users/znck/Workspace/Experiments/SafariBooks-Downloader/download3.epub && open /Users/znck/Workspace/Experiments/SafariBooks-Downloader/download3.epub }
-alias steal-book="__steal-book__"
-#compdef steal-book=node
 
 function __jssize__ { cat $1 | terser -c -m | gzip -c9n | wc -c }
 alias jssize="__jssize__"
-#compdef jssize=cat
+
 alias nri="pnpm recursive install"
 #compdef nri=pnpm
+
 alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
-#compdef copy-ssh-key=cat
+
 function __dotenv__ { export $(grep -v '^#' .env | xargs) }
 alias dotenv="__dotenv__"
+
 function __dotenv-unset__ { unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs) }
 alias dotenv-unset="__dotenv-unset__"
+
+function __mov2gif__ { ffmpeg -i $1 -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 }
+alias mov2gif="__mov2gif__"
+alias nx="$(npm --global bin)/n"

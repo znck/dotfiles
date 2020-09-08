@@ -2,22 +2,30 @@
 	email = hi@znck.me
 	name = Rahul Kadyan
 	signingkey = 08BA995B
+
 [core]
 	autocrlf = input
+
 [commit]
 	gpgsign = true
+
 [tag]
 	gpgsign = true
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
 [alias]
   pr = pull-request
   clean-branch = !clean-stale-branches
   cb = clean-branch
+
 [url "ssh://git@github.com/"]
 	insteadOf = https://github.com/
+
 [url "ssh://git@gitlab.com/"]
 	insteadOf = https://gitlab.com/
+
