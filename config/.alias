@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 
-DIR="$(dirname ${0})" # Get script directory.
-
 alias wifi="wifi-password -q"
 #compdef wifi="wifi-password"
 
@@ -11,7 +9,7 @@ alias s="git status"
 alias n="pnpm"
 #compdef n="npm"
 
-alias dotfiles="code ${DIR}"
+alias dotfiles="code ${HOME}/.dotfiles"
 
 alias recommit="git commit --amend --no-edit"
 #compdef recommit="git"
