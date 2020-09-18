@@ -89,3 +89,5 @@ function __n__() {
   fi
 }
 alias nx="__n__"
+alias pull="git pull -r"
+#compdef pull=git
