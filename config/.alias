@@ -1,15 +1,25 @@
 #!/usr/bin/env sh
 
+function __mov2gif__ { ffmpeg -i $1 -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 }
+alias mov2gif="__mov2gif__"
+
 alias wifi="wifi-password -q"
 #compdef wifi="wifi-password"
 
 alias s="git status"
 #compdef s="git"
 
-alias n="pnpm"
-#compdef n="npm"
-
 alias dotfiles="code ${HOME}/.dotfiles"
+function __choose_node_package_manager__() {
+  if [ -f "package-lock.json" ]; then
+    npm $*
+  elif [ -f "yarn.lock" ]; then
+    yarn $*
+  else
+    pnpm $*
+  fi
+}
+alias n="__choose_node_package_manager__"
 
 alias recommit="git commit --amend --no-edit"
 #compdef recommit="git"
@@ -19,18 +29,18 @@ alias ds="docker stack"
 
 alias current-branch="git rev-parse --abbrev-ref HEAD"
 #compdef current-branch=git
-
 function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
+
 alias push="__push__"
 #compdef push=git
 
 function __who-is-using__ { lsof -i :$1 }
 alias who-is-using="__who-is-using__"
 
-alias ni="pnpm install"
+alias ni="n install"
 #compdef ni=npm
 
-alias nr="pnpm run"
+alias nr="n run"
 #compdef nr=npm
 
 alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
@@ -38,6 +48,7 @@ alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
 
 function __jssize__ { cat $1 | terser -c -m | gzip -c9n | wc -c }
 alias jssize="__jssize__"
+#compdef jssize=cat
 
 alias nri="pnpm recursive install"
 #compdef nri=pnpm
@@ -50,6 +61,31 @@ alias dotenv="__dotenv__"
 function __dotenv-unset__ { unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs) }
 alias dotenv-unset="__dotenv-unset__"
 
-function __mov2gif__ { ffmpeg -i $1 -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 }
-alias mov2gif="__mov2gif__"
-alias nx="$(npm --global bin)/n"
+alias fix-uk-keyboard="hidutil property --set  '{
+  \"UserKeyMapping\": [
+    {
+      \"HIDKeyboardModifierMappingSrc\": 0x700000064,
+      \"HIDKeyboardModifierMappingDst\": 0x700000035
+    }
+  ]
+}'"
+
+alias tf="terraform"
+#compdef tf=terraform
+
+function __paste_as_html__ {
+  osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*", pack("H*", substr($_, 11, -3)))'
+}
+alias pbpaste-html=__paste_as_html__
+
+alias fetch="git fetch -ap"
+#compdef fetch=git
+
+function __n__() {
+  if [ -z "$1" ]; then
+    $(npm --global bin)/n auto
+  else
+    $(npm --global bin)/n $*
+  fi
+}
+alias nx="__n__"

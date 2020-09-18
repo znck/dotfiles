@@ -62,14 +62,14 @@ if ! [[ -d /usr/local/n ]]; then
     sudo chown -R $(whoami) /usr/local/n
 fi
 
-if ! [[ -d "/Application/Visual Studio Code.app" ]]; then
+if ! [[ -d "/Applications/Visual Studio Code.app" ]]; then
     echo ""
     echo "# Downloading VS Code"
-    curl -SL https://update.code.visualstudio.com/latest/darwin/stable | tax -xvz - -C /Applications/
+    curl -SL https://update.code.visualstudio.com/latest/darwin/stable | tar -xvz - -C /Applications/
     # TODO: Set VS Code settings sync
 fi
 
-if ! [[ -d "/Application/Docker.app" ]]; then
+if ! [[ -d "/Applications/Docker.app" ]]; then
     echo ""
     echo "# Downloading Docker"
     curl -o "${HOME}/Downloads/Docker.dmg" -SL https://download.docker.com/mac/stable/Docker.dmg
@@ -79,6 +79,14 @@ if ! [[ -d "/Application/Docker.app" ]]; then
 fi
 
 # TODO: Get ssh key and gpg file from iCloud
+
+echo ""
+echo "# Setup npm"
+npm config set init.author.name "Rahul Kadyan"
+npm config set init.author.email "hey@znck.me"
+npm config set init.author.url "https://znck.me"
+npm config set init.license "MIT"
+npm config set init.version "0.0.0"
 
 echo ""
 echo "# Generate dot files"
