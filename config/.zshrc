@@ -1,5 +1,6 @@
 export ZSH_DISABLE_COMPFIX=true
 export DOTFILES="${HOME}/.dotfiles"
+
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 

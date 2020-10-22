@@ -55,10 +55,10 @@ alias nri="pnpm recursive install"
 
 alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
 
-function __dotenv__ { export $(grep -v '^#' .env | xargs) }
+function __dotenv__ { export $(grep -v '^#' ${1:-".env"} | xargs) }
 alias dotenv="__dotenv__"
 
-function __dotenv-unset__ { unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs) }
+function __dotenv-unset__ { unset $(grep -v '^#' ${1:-".env"} | sed -E 's/(.*)=.*/\1/' | xargs) }
 alias dotenv-unset="__dotenv-unset__"
 
 alias fix-uk-keyboard="hidutil property --set  '{
