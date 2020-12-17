@@ -29,7 +29,7 @@ function clean_stale_branches() {
 
   if [ ${#NOT_TRACKING[@]} -gt 0 ]; then
     echo "Untracked branches:"
-    for BRANCH in ${NOT_TRACKING}
+    for BRANCH in "${NOT_TRACKING[@]}"
     do
       echo "Delete: ${BRANCH}"
       _confirm && git branch -D ${BRANCH}
