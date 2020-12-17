@@ -91,3 +91,7 @@ function __n__() {
 alias nx="__n__"
 alias pull="git pull -r"
 #compdef pull=git
+alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox"
+#compdef firefox=/Applications/Firefox.app/Contents/MacOS/firefox
+alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+#compdef chrome=/Applications/Google\
