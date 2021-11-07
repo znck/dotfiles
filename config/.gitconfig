@@ -1,7 +1,7 @@
 [user]
 	email = hi@znck.me
 	name = Rahul Kadyan
-	signingkey = 08BA995B
+	signingkey = 496041D243818206D62CC2DF21AF5D4A08BA995B
 
 [core]
 	autocrlf = input
@@ -30,3 +30,5 @@
 [url "ssh://git@gitlab.com/"]
 	insteadOf = https://gitlab.com/
 
+[init]
+	defaultBranch = main
