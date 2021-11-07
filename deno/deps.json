@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "encoding/hex": "https://deno.land/std@0.113.0/encoding/hex.ts",
+    "flags": "https://deno.land/std@0.113.0/flags/mod.ts",
+    "fs": "https://deno.land/std@0.113.0/fs/mod.ts",
+    "keychain": "file:///Users/znck/Workspace/znck/keychain/mod.ts",
+    "path": "https://deno.land/std@0.113.0/path/mod.ts",
+    "streams": "https://deno.land/std@0.113.0/streams/mod.ts",
+    "yargs": "https://deno.land/x/yargs@v17.2.1-deno/deno.ts",
+    "yargs/types": "https://deno.land/x/yargs@v17.2.1-deno/deno-types.ts"
+  }
+}

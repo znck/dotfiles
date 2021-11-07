@@ -2,97 +2,88 @@
 
 set -e
 
-function indent() { sed -En 's/^/  /'; }
-
-function isBinary() {
-    local _bin="$1" _full_path
-
-    _full_path=$(command -v "${_bin}")
-    _status=$?
-
-    if [ ${_status} -eq 0 ]; then
-        if [[ -x "${_full_path}" ]]; then
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
 echo "# My dotfiles"
 cd "$(dirname ${0})"
 DIR="$(pwd)" # Get script directory.
 cd -
 
-if ! $(isBinary brew); then
-    echo ""
-    echo "# Install brew"
-    command -v brew >/dev/null 2>&1 || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-fi
+source "${DIR}/deps.sh"
+source "${DIR}/scripts/helpers.sh"
 
-if ! [[ -d "${HOME}/.oh-my-zsh" ]]; then
-    echo ""
-    echo "# Install oh-my-zsh"
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
-
-echo ""
-echo "# Installing brew packages"
-PACKAGES="zsh hub node n"
-export HOMEBREW_NO_AUTO_UPDATE=1
-for PACKAGE in $PACKAGES; do
-    if ! $(isBinary ${PACKAGE}); then
-        echo "- install $PACKAGE"
-        brew install $PACKAGE | indent
-    fi
-done
-
-echo ""
-echo "# Installing npm packages"
-PACKAGES=("yarn" "pnpm" "prettier")
-for PACKAGE in $PACKAGES; do
-    if ! $(isBinary ${PACKAGE}); then
-        echo "- install $PACKAGE"
-        $(brew --prefix)/bin/npm install --global $PACKAGE | indent
-    fi
-done
-
-if ! [[ -d /usr/local/n ]]; then
-    sudo mkdir -p /usr/local/n
-    sudo chown -R $(whoami) /usr/local/n
-fi
-
-if ! [[ -d "/Applications/Visual Studio Code.app" ]]; then
-    echo ""
-    echo "# Downloading VS Code"
-    curl -SL https://update.code.visualstudio.com/latest/darwin/stable | tar -xvz - -C /Applications/
-    # TODO: Set VS Code settings sync
-fi
-
-if ! [[ -d "/Applications/Docker.app" ]]; then
-    echo ""
-    echo "# Downloading Docker"
-    curl -o "${HOME}/Downloads/Docker.dmg" -SL https://download.docker.com/mac/stable/Docker.dmg
-    open "${HOME}/Downloads/Docker.dmg"
-    cp -a "/Volumes/Docker/Docker.app" "/Applications"
-    osascript -e 'tell application "Finder" to eject "Docker"'
-fi
-
-# TODO: Get ssh key and gpg file from iCloud
-
-echo ""
-echo "# Setup npm"
-npm config set init.author.name "Rahul Kadyan"
-npm config set init.author.email "hey@znck.me"
-npm config set init.author.url "https://znck.me"
-npm config set init.license "MIT"
-npm config set init.version "0.0.0"
-
+## 1. Symlink dotfiles
 echo ""
 echo "# Generate dot files"
-for FILE in $(find "$DIR/config" -type f); do
-    FILENAME=$(basename -- "$FILE")
-    echo "- add $FILENAME"
-    rm -f $HOME/$FILENAME
-    ln -s $DIR/config/$FILENAME $HOME/$FILENAME
+SOURCE_DIR="$DIR/config"
+for FILE in $(find $SOURCE_DIR -type f); do
+    FILENAME=$(relative "${SOURCE_DIR}" "${FILE}")
+    echo "- add ${FILENAME}"
+    mkdir -p $(dirname "${HOME}/${FILENAME}")
+    rm -f "${HOME}/${FILENAME}"
+    ln -s "${SOURCE_DIR}/${FILENAME}" "${HOME}/${FILENAME}"
 done
+
+## 2. Install ZSH
+if [ ! -d $HOME/.oh-my-zsh ]; then 
+    echo ""
+    echo "# Installing oh-my-zsh"
+    export KEEP_ZSHRC="yes"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+fi
+
+## 3. Install brew
+if [ ! -d $HOME/.homebrew ]; then
+    echo ""
+    echo "# Installing brew"
+    git clone https://github.com/Homebrew/brew $HOME/.homebrew
+    eval "$($HOME/.homebrew/bin/brew shellenv)"
+    brew analytics off
+    brew update --force --quiet
+    chmod -R go-w "$(brew --prefix)/share/zsh"
+fi
+
+# 4. Install brew packages
+echo ""
+echo "# Updating brew"
+brew update
+
+export PATH="${HOME}/.homebrew/bin:${PATH}"
+export HOMEBREW_NO_AUTO_UPDATE=1
+for package in "${BREW_PACKAGES[@]}"; do
+    if ! $(isBinary "${package}"); then
+        echo ""
+        echo "# Installing ${package}"
+        brew install "${package}"
+    fi
+done
+
+## 5. Install node
+export N_PREFIX="$HOME/.n"
+export PATH="$N_PREFIX/bin:$PATH"
+export NODE_VERSION_MANAGER="${HOME}/.homebrew/bin/n"
+if ! $(isBinary node); then
+    echo ""
+    echo "# Installing node"
+    ${NODE_VERSION_MANAGER} latest
+fi
+
+## 6. Install node packages
+echo ""
+echo "# Updating node"
+$NODE_VERSION_MANAGER latest
+for package in "${NODE_PACKAGES[@]}"; do
+    echo ""
+    echo "# Installing ${package}"
+    npm install --silent --global "${package}@latest"
+done
+
+## 7. Load secrets
+echo ""
+echo "# Loading secrets"
+for SECRET_FILE in "${SECRET_FILES[@]}"; do
+    echo " - ${SECRET_FILE}"
+    secrets load --key="${SECRET_FILE}" "${SECRET_FILE}"
+done
+
+## Done
+echo ""
+echo "Done. Start a new terminal session!"

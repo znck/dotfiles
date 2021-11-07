@@ -54,7 +54,7 @@ HIST_STAMPS="yyyy-mm-dd"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-  git docker yarn
+  git docker
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -88,5 +88,17 @@ source $HOME/.alias
 alias zshconfig="code ~/.zshrc"
 alias ohmyzsh="code ~/.oh-my-zsh"
 
+# Brew
+export BREW_HOME="$HOME/.homebrew"
+export PATH="$BREW_HOME/bin:$PATH"
+
 # Rust
 export PATH="$HOME/.cargo/bin:$PATH"
+
+# PNPM
+export PNPM_HOME="$HOME/Library/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
+# N
+export N_PREFIX="$HOME/.n"
+export PATH="$N_PREFIX/bin:$PATH"

@@ -1,0 +1,3 @@
+#!/usr/bin/env -S sh
+
+deno -q run --allow-all --import-map=${HOME}/.dotfiles/deno/deps.json $@

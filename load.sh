@@ -6,4 +6,4 @@ for script in "${DIR}/scripts"/*; do
   . "${script}"
 done
 
-export PATH="${PATH}:${DIR}/bin"
+export PATH="${DIR}/bin:${PATH}"
