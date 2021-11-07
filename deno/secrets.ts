@@ -96,7 +96,6 @@ program.command(
       console.log(contents)
     } else {
       const outfile = await Deno.realPath(filename.replace(/^[~]/, HOME))
-      console.log({ key, outfile })
       await Deno.mkdir(Path.dirname(outfile), { recursive: true })
       await Deno.remove(outfile)
       await Deno.writeFile(outfile, new TextEncoder().encode(contents), {
