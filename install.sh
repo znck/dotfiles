@@ -48,6 +48,9 @@ brew update
 
 export PATH="${HOME}/.homebrew/bin:${PATH}"
 export HOMEBREW_NO_AUTO_UPDATE=1
+for tap in "${BREW_TAPS[@]}"; do
+    brew tap "${tap}"
+done
 for package in "${BREW_PACKAGES[@]}"; do
     if ! $(isBinary "${package}"); then
         echo ""
@@ -84,6 +87,11 @@ for SECRET_FILE in "${SECRET_FILES[@]}"; do
     echo " - ${SECRET_FILE}"
     secrets load --key="${SECRET_FILE}" "${SECRET_FILE}"
 done
+
+## Configur GnuPG
+defaults write org.gpgtools.common DisableKeychain -bool no 
+defaults write org.gpgtools.common UseKeychain -bool yes
+gpgconf --kill gpg-agent                                   
 
 ## Done
 echo ""
