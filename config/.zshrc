@@ -102,3 +102,6 @@ export PATH="$PNPM_HOME:$PATH"
 # N
 export N_PREFIX="$HOME/.n"
 export PATH="$N_PREFIX/bin:$PATH"
+
+# Enable TTY for GPG
+export GPG_TTY=$(tty)

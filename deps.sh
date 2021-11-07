@@ -9,8 +9,3 @@ export NODE_PACKAGES=(
   pnpm   # https://pnpm.io/
   serve  # https://github.com/vercel/serve
 )
-
-export SECRET_FILES=(
-  "~/.ssh/id_rsa"
-  "~/.ssh/id_ed25519"
-)

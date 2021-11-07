@@ -23,7 +23,7 @@ for FILE in $(find $SOURCE_DIR -type f); do
 done
 
 ## 2. Install ZSH
-if [ ! -d $HOME/.oh-my-zsh ]; then 
+if [ ! -d $HOME/.oh-my-zsh ]; then
     echo ""
     echo "# Installing oh-my-zsh"
     export KEEP_ZSHRC="yes"
@@ -79,6 +79,7 @@ done
 ## 7. Load secrets
 echo ""
 echo "# Loading secrets"
+SECRET_FILES=($(secrets ls))
 for SECRET_FILE in "${SECRET_FILES[@]}"; do
     echo " - ${SECRET_FILE}"
     secrets load --key="${SECRET_FILE}" "${SECRET_FILE}"

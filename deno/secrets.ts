@@ -25,23 +25,22 @@ program.command(
   withErrorHandling(async (args: Arguments) => {
     const filename = args.filename as string | undefined
     let contents: string
+
+    const keychain = await getKeychain()
+    const HOME = Deno.env.get('HOME') ?? '/'
     if (filename == null || filename === '-') {
       if (args.key == null)
         throw new Error('--key is required when reading from stdin')
 
       contents = new TextDecoder().decode(await Streams.readAll(Deno.stdin))
     } else {
-      await canReadFile(filename)
+      const infile = Path.resolve(Deno.cwd(), filename.replace(/^[~]/, HOME))
 
-      contents = new TextDecoder().decode(
-        await Deno.readFile(Path.resolve(filename)),
-      )
+      await canReadFile(infile)
+      contents = new TextDecoder().decode(await Deno.readFile(infile))
     }
 
-    const keychain = await getKeychain()
-
-    const key =
-      args.key ?? `~/${Path.relative(Deno.env.get('HOME') ?? '/', filename!)}`
+    const key = args.key ?? `~/${Path.relative(HOME, filename!)}`
 
     try {
       await keychain.deleteGenericPassword({
@@ -60,6 +59,41 @@ program.command(
       kind: 'secure note',
       type: 'note',
       applications: false,
+    })
+  }),
+)
+
+program.command(
+  'ls',
+  'list keychain items',
+  {},
+  withErrorHandling(async () => {
+    const keychain = await getKeychain()
+    const items = await keychain.getItems()
+
+    console.log(...items.map((item) => item.service))
+  }),
+)
+
+program.command(
+  'rm',
+  'remove keychain items',
+  {
+    key: {
+      type: 'string',
+      required: true,
+      alias: 'k',
+      description: 'Name of key to delete',
+    },
+  },
+  withErrorHandling(async (args: Arguments) => {
+    const keychain = await getKeychain()
+    const key = args.key
+
+    await keychain.deleteGenericPassword({
+      account: '',
+      service: key,
+      type: 'note',
     })
   }),
 )
@@ -95,12 +129,15 @@ program.command(
     if (filename == null || filename === '-') {
       console.log(contents)
     } else {
-      const outfile = await Deno.realPath(filename.replace(/^[~]/, HOME))
-      await Deno.mkdir(Path.dirname(outfile), { recursive: true })
-      await Deno.remove(outfile)
-      await Deno.writeFile(outfile, new TextEncoder().encode(contents), {
-        mode: 0o400,
-      })
+      const outfile = Path.resolve(Deno.cwd(), filename.replace(/^[~]/, HOME))
+      await canWriteFile(outfile)
+      try {
+        await Deno.remove(outfile)
+      } finally {
+        await Deno.writeFile(outfile, new TextEncoder().encode(contents), {
+          mode: 0o400,
+        })
+      }
     }
   }),
 )
@@ -110,7 +147,7 @@ try {
   if (Deno.args.length === 0) program.showHelp()
 } catch (error) {
   if (error instanceof Error) {
-    console.error(error.message)
+    console.error(error)
   } else {
     console.error(error)
   }
@@ -141,7 +178,7 @@ function withErrorHandling<T extends (...args: any[]) => any>(value: T): T {
 async function canReadFile(filename: string): Promise<void> {
   const status = await Deno.permissions.request({
     name: 'read',
-    path: Path.resolve(filename),
+    path: filename,
   })
 
   if (status.state !== 'granted') {
@@ -149,13 +186,32 @@ async function canReadFile(filename: string): Promise<void> {
   }
 }
 
-async function getKeychain(): Promise<Keychain> {
+async function canWriteFile(filename: string): Promise<void> {
   const status = await Deno.permissions.request({
+    name: 'write',
+    path: filename,
+  })
+
+  if (status.state !== 'granted') {
+    throw new Error(`Cannot write ${filename}`)
+  }
+}
+
+async function getKeychain(): Promise<Keychain> {
+  const permissionHome = await Deno.permissions.request({
+    name: 'env',
+    variable: 'HOME',
+  })
+  const permissionSecretsPath = await Deno.permissions.request({
     name: 'env',
     variable: 'SECRETS_PATH',
   })
 
-  if (status.state === 'granted') {
+  if (permissionHome.state !== 'granted') {
+    throw new Error('HOME variable is required')
+  }
+
+  if (permissionSecretsPath.state === 'granted') {
     const filename = Deno.env.get('SECRETS_PATH')
     if (filename != null) return new Keychain(filename)
   }
