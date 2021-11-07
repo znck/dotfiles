@@ -91,9 +91,22 @@ function __n__() {
 alias nx="__n__"
 alias pull="git pull -r"
 #compdef pull=git
-alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox"
-#compdef firefox=/Applications/Firefox.app/Contents/MacOS/firefox
+alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox -foreground"
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-#compdef chrome=/Applications/Google\
 alias home="cd ~"
-#compdef home=cd
+alias gpr="gh pr create"
+#compdef gpr=gh
+
+function __gi__ {
+  if [ "$#" -ne 1 ]; then
+    gh issue list
+  else
+    gh issue view $*
+  fi
+}
+alias gi="__gi__"
+#compdef gi=gh
+function __quarantine__ { sudo xattr -r -d com.apple.quarantine $1 }
+alias quarantine="__quarantine__"
+alias tmux-shelly="tmux new-session -A -s shelly"
+#compdef tmux-shelly=tmux
