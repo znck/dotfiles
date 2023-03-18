@@ -126,4 +126,3 @@ alias tmux-shelly="tmux new-session -A -s shelly"
 compdef tmux-shelly=tmux
 
 alias preview="/Users/znck/Workspace/OpenSource/vuedx/preview/packages/preview/bin/preview.js"
-

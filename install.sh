@@ -87,10 +87,13 @@ if ask "Load secrets?"; then
     done
 fi
 
-## Configur GnuPG
-defaults write org.gpgtools.common DisableKeychain -bool no 
-defaults write org.gpgtools.common UseKeychain -bool yes
+## Configure GnuPG
+defaults write org.gpgtools.common DisableKeychain -bool yes
+defaults write org.gpgtools.common UseKeychain -bool no
 gpgconf --kill gpg-agent
+
+## Configure Pinentry
+/opt/homebrew/bin/pinentry-touchid -fix
 
 ## Done
 echo ""
