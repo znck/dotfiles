@@ -1,3 +1,13 @@
+function ask {
+  while true; do
+      read -p "$* [y/n]: " yn
+      case $yn in
+          [Yy]*) return 0  ;;  
+          [Nn]*) return 1  ;;
+      esac
+  done
+}
+
 function indent() { sed -En 's/^/  /'; }
 
 function isBinary() {

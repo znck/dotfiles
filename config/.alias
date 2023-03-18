@@ -4,10 +4,9 @@ function __mov2gif__ { ffmpeg -i $1 -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | g
 alias mov2gif="__mov2gif__"
 
 alias wifi="wifi-password -q"
-#compdef wifi="wifi-password"
 
 alias s="git status"
-#compdef s="git"
+compdef s="git"
 
 alias dotfiles="code ${HOME}/.dotfiles"
 function __choose_node_package_manager__() {
@@ -47,34 +46,37 @@ function pm() {
     pnpm $*
   fi
 }
-
-alias ni="pm install"
-alias nr="pm run"
-alias nt="pm test"
+alias n="__choose_node_package_manager__"
+compdef n="pnpm"
 
 alias recommit="git commit --amend --no-edit"
-#compdef recommit="git"
+compdef recommit="git"
 
 alias ds="docker stack"
-#compdef ds="docker"
+compdef ds="docker"
 
 alias current-branch="git rev-parse --abbrev-ref HEAD"
-#compdef current-branch=git
+compdef current-branch=git
+function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
 
 function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
 alias push="__push__"
-#compdef push=git
+compdef push=git
 
 function __who-is-using__ { lsof -i :$1 }
 alias who-is-using="__who-is-using__"
 
+alias ni="n install"
+compdef ni=pnpm
 
-alias p="pnpx prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
-#compdef p=prettier
+alias nr="n run"
+compdef nr=pnpm
+
+alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
 
 function __jssize__ { cat $1 | terser -c -m | gzip -c9n | wc -c }
 alias jssize="__jssize__"
-#compdef jssize=cat
+compdef jssize=cat
 
 alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
 
@@ -94,7 +96,6 @@ alias fix-uk-keyboard="hidutil property --set  '{
 }'"
 
 alias tf="terraform"
-#compdef tf=terraform
 
 function __paste_as_html__ {
   osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*", pack("H*", substr($_, 11, -3)))'
@@ -104,12 +105,11 @@ alias pbpaste-html=__paste_as_html__
 alias fetch="git fetch -ap"
 #compdef fetch=git
 alias pull="git pull -r"
-#compdef pull=git
+compdef pull=git
 alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox -foreground"
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias home="cd ~"
 alias gpr="gh pr create"
-#compdef gpr=gh
 
 function __gi__ {
   if [ "$#" -ne 1 ]; then
@@ -119,8 +119,11 @@ function __gi__ {
   fi
 }
 alias gi="__gi__"
-#compdef gi=gh
+
 function __quarantine__ { sudo xattr -r -d com.apple.quarantine $1 }
 alias quarantine="__quarantine__"
 alias tmux-shelly="tmux new-session -A -s shelly"
-#compdef tmux-shelly=tmux
+compdef tmux-shelly=tmux
+
+alias preview="/Users/znck/Workspace/OpenSource/vuedx/preview/packages/preview/bin/preview.js"
+

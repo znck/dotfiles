@@ -4,9 +4,11 @@ function backup() {
 
 function restore() {
     echo "Do you wish to restore Workspace from backup?"
-    select yn in "Yes" "No"
-    case $yn in
-        Yes ) rsync -aP --delete  --exclude 'node_modules' "/Volumes/disk0/Workspace" "$HOME"; return ;;
-        No ) return ;;
-    esac
+    while true; do
+      read -p "$* [y/n]: " yn
+      case $yn in
+          [Yy]*) rsync -aP --delete  --exclude 'node_modules' "/Volumes/disk0/Workspace" "$HOME"; return ;;
+          [Nn]*) return  ;;
+      esac
+    done    
 }

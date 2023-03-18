@@ -31,11 +31,10 @@ if [ ! -d $HOME/.oh-my-zsh ]; then
 fi
 
 ## 3. Install brew
-if [ ! -d $HOME/.homebrew ]; then
+if [ ! -d /opt/homebrew ]; then
     echo ""
     echo "# Installing brew"
-    git clone https://github.com/Homebrew/brew $HOME/.homebrew
-    eval "$($HOME/.homebrew/bin/brew shellenv)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
     brew analytics off
     brew update --force --quiet
     chmod -R go-w "$(brew --prefix)/share/zsh"
@@ -46,13 +45,13 @@ echo ""
 echo "# Updating brew"
 brew update
 
-export PATH="${HOME}/.homebrew/bin:${PATH}"
+export PATH="/opt/homebrew/bin:${PATH}"
 export HOMEBREW_NO_AUTO_UPDATE=1
 for tap in "${BREW_TAPS[@]}"; do
     brew tap "${tap}"
 done
 for package in "${BREW_PACKAGES[@]}"; do
-    if ! $(isBinary "${package}"); then
+    if ! $(brew list "${package}" &>/dev/null); then
         echo ""
         echo "# Installing ${package}"
         brew install "${package}"
@@ -62,17 +61,16 @@ done
 ## 5. Install node
 export N_PREFIX="$HOME/.n"
 export PATH="$N_PREFIX/bin:$PATH"
-export NODE_VERSION_MANAGER="${HOME}/.homebrew/bin/n"
-if ! $(isBinary node); then
-    echo ""
-    echo "# Installing node"
-    ${NODE_VERSION_MANAGER} latest
-fi
+export NODE_VERSION_MANAGER="/opt/homebrew/bin/n"
+echo ""
+echo "# Installing node"
+${NODE_VERSION_MANAGER} latest
+
+echo ""
+echo "# Installing terraform"
+tfenv install
 
 ## 6. Install node packages
-echo ""
-echo "# Updating node"
-$NODE_VERSION_MANAGER latest
 for package in "${NODE_PACKAGES[@]}"; do
     echo ""
     echo "# Installing ${package}"
@@ -81,17 +79,18 @@ done
 
 ## 7. Load secrets
 echo ""
-echo "# Loading secrets"
-SECRET_FILES=($(secrets ls))
-for SECRET_FILE in "${SECRET_FILES[@]}"; do
-    echo " - ${SECRET_FILE}"
-    secrets load --key="${SECRET_FILE}" "${SECRET_FILE}"
-done
+if ask "Load secrets?"; then
+    echo "# Loading secrets"
+    SECRET_FILES=($(secrets ls))
+    for SECRET_FILE in "${SECRET_FILES[@]}"; do
+        ask "Load ${SECRET_FILE}" && secrets load --key="${SECRET_FILE}" "${SECRET_FILE}"
+    done
+fi
 
 ## Configur GnuPG
 defaults write org.gpgtools.common DisableKeychain -bool no 
 defaults write org.gpgtools.common UseKeychain -bool yes
-gpgconf --kill gpg-agent                                   
+gpgconf --kill gpg-agent
 
 ## Done
 echo ""

@@ -48,13 +48,16 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # see 'man strftime' for details.
 HIST_STAMPS="yyyy-mm-dd"
 
+autoload -Uz compinit
+compinit
+setopt complete_aliases
 
 # Which plugins would you like to load?
 # Standard plugins can be found in ~/.oh-my-zsh/plugins/*
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-  git docker
+  git docker npm
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -71,7 +74,7 @@ export LANG=en_US.UTF-8
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
-  export EDITOR='vim'
+  export EDITOR='code --wait'
 fi
 
 # Compilation flags
@@ -89,14 +92,14 @@ alias zshconfig="code ~/.zshrc"
 alias ohmyzsh="code ~/.oh-my-zsh"
 
 # Brew
-export BREW_HOME="$HOME/.homebrew"
+export BREW_HOME="/opt/homebrew"
 export PATH="$BREW_HOME/bin:$PATH"
 
 # Rust
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # PNPM
-export PNPM_HOME="$HOME/Library/pnpm"
+export PNPM_HOME="$HOME/.pnpm"
 export PATH="$PNPM_HOME:$PATH"
 
 # N
@@ -105,3 +108,6 @@ export PATH="$N_PREFIX/bin:$PATH"
 
 # Enable TTY for GPG
 export GPG_TTY=$(tty)
+
+# Remote Docker
+export DOCKER_HOST=tcp://10.1.1.43:2375

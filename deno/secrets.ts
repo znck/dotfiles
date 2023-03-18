@@ -23,43 +23,7 @@ program.command(
     },
   },
   withErrorHandling(async (args: Arguments) => {
-    const filename = args.filename as string | undefined
-    let contents: string
-
-    const keychain = await getKeychain()
-    const HOME = Deno.env.get('HOME') ?? '/'
-    if (filename == null || filename === '-') {
-      if (args.key == null)
-        throw new Error('--key is required when reading from stdin')
-
-      contents = new TextDecoder().decode(await Streams.readAll(Deno.stdin))
-    } else {
-      const infile = Path.resolve(Deno.cwd(), filename.replace(/^[~]/, HOME))
-
-      await canReadFile(infile)
-      contents = new TextDecoder().decode(await Deno.readFile(infile))
-    }
-
-    const key = args.key ?? `~/${Path.relative(HOME, filename!)}`
-
-    try {
-      await keychain.deleteGenericPassword({
-        account: '',
-        service: key,
-        type: 'note',
-      })
-    } catch {
-      // ignore
-    }
-
-    await keychain.addGenericPassword({
-      account: '',
-      service: key,
-      password: contents,
-      kind: 'secure note',
-      type: 'note',
-      applications: false,
-    })
+    await saveSecret(args.filename, args.key)
   }),
 )
 
@@ -71,7 +35,7 @@ program.command(
     const keychain = await getKeychain()
     const items = await keychain.getItems()
 
-    console.log(...items.map((item) => item.service))
+    console.log(items.map((item) => item.service).join('\n'))
   }),
 )
 
@@ -95,6 +59,27 @@ program.command(
       service: key,
       type: 'note',
     })
+  }),
+)
+
+program.command(
+  'update-all',
+  'update secrets in keychain from local files',
+  withErrorHandling(async () => {
+    const keychain = await getKeychain()
+    const items = await keychain.getItems()
+
+    for (const item of items) {
+      const HOME = Deno.env.get('HOME') ?? '/'
+      const filename = item.service.replace('~', HOME)
+      const key = item.service
+      console.log(`Updating "${key}" from "${filename}"`)
+      await saveSecret(filename, key)
+    }
+
+    if (items.length === 0) {
+      console.warn('No secrets')
+    }
   }),
 )
 
@@ -131,11 +116,21 @@ program.command(
     } else {
       const outfile = Path.resolve(Deno.cwd(), filename.replace(/^[~]/, HOME))
       await canWriteFile(outfile)
+
+      let mode = 0o400
+
+      try {
+        const stats = await Deno.stat(outfile)
+        if (stats.mode != null) mode = stats.mode
+      } catch {
+        // -
+      }
+      
       try {
         await Deno.remove(outfile)
       } finally {
         await Deno.writeFile(outfile, new TextEncoder().encode(contents), {
-          mode: 0o400,
+          mode,
         })
       }
     }
@@ -153,6 +148,44 @@ try {
   }
 
   program.exit(1)
+}
+
+async function saveSecret(filename: string | undefined, key?: string) {
+  let contents: string
+  const keychain = await getKeychain()
+  const HOME = Deno.env.get('HOME') ?? '/'
+  if (filename == null || filename === '-') {
+    if (key == null)
+      throw new Error('--key is required when reading from stdin')
+
+    contents = new TextDecoder().decode(await Streams.readAll(Deno.stdin))
+  } else {
+    const infile = Path.resolve(Deno.cwd(), filename.replace(/^[~]/, HOME))
+
+    await canReadFile(infile)
+    contents = new TextDecoder().decode(await Deno.readFile(infile))
+  }
+
+  key = key ?? `~/${Path.relative(HOME, filename!)}`
+
+  try {
+    await keychain.deleteGenericPassword({
+      account: '',
+      service: key,
+      type: 'note',
+    })
+  } catch {
+    // ignore
+  }
+
+  await keychain.addGenericPassword({
+    account: '',
+    service: key,
+    password: contents,
+    kind: 'secure note',
+    type: 'note',
+    applications: false,
+  })
 }
 
 // deno-lint-ignore no-explicit-any
