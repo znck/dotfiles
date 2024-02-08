@@ -10,7 +10,7 @@ compdef s="git"
 
 alias dotfiles="code ${HOME}/.dotfiles"
 function __choose_node_package_manager__() {
-  PM_VERSION=$(node -p 'require("./package.json").packageManager??""' || echo '')
+  PM_VERSION=$(node -p 'require("./package.json").packageManager ?? ""' || echo '')
   PM=$(echo $PM_VERSION | sed 's/@.*//g')
   if [ -n "${PM}" ]; then
     corepack enable
@@ -70,7 +70,6 @@ alias ni="n install"
 compdef ni=pnpm
 
 alias nr="n run"
-compdef nr=pnpm
 
 alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
 
@@ -126,3 +125,5 @@ alias tmux-shelly="tmux new-session -A -s shelly"
 compdef tmux-shelly=tmux
 
 alias preview="/Users/znck/Workspace/OpenSource/vuedx/preview/packages/preview/bin/preview.js"
+alias nx="pnpm nx"
+#compdef nx=pnpm

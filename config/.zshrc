@@ -110,4 +110,4 @@ export PATH="$N_PREFIX/bin:$PATH"
 export GPG_TTY=$(tty)
 
 # Remote Docker
-export DOCKER_HOST=tcp://10.1.1.43:2375
+# export DOCKER_HOST=tcp://10.1.1.43:2375

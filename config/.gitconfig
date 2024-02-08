@@ -24,11 +24,5 @@
   clean-branch = !clean-stale-branches
   cb = clean-branch
 
-[url "ssh://git@github.com/"]
-	insteadOf = https://github.com/
-
-[url "ssh://git@gitlab.com/"]
-	insteadOf = https://gitlab.com/
-
 [init]
 	defaultBranch = main
