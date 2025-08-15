@@ -66,9 +66,6 @@ echo ""
 echo "# Installing node"
 ${NODE_VERSION_MANAGER} latest
 
-echo ""
-echo "# Installing terraform"
-tfenv install
 
 ## 6. Install node packages
 for package in "${NODE_PACKAGES[@]}"; do

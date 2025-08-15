@@ -9,12 +9,8 @@ export BREW_PACKAGES=(
     gnupg    # https://gnupg.org/
     pinentry-mac
     pinentry-touchid    # https://github.com/jorgelbg/pinentry-touchid
-    doctl               # https://docs.digitalocean.com/reference/doctl
-    superfly/tap/flyctl # https://fly.io/docs/getting-started/installing-flycntl/
-    tfenv
 )
 
 export NODE_PACKAGES=(
-    pnpm   # https://pnpm.io/
-    serve  # https://github.com/vercel/serve
+    // None
 )

@@ -12,4 +12,4 @@ _pnpm_completion () {
     _describe 'values' reply
   fi
 }
-compdef _pnpm_completion pnpm
+#compdef _pnpm_completion pnpm

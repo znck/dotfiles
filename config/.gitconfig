@@ -21,8 +21,8 @@
 
 [alias]
   pr = pull-request
-  clean-branch = !clean-stale-branches
   cb = clean-branch
+  clean-branch = !clean-stale-branches
 
 [init]
 	defaultBranch = main

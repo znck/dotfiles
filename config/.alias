@@ -6,78 +6,25 @@ alias mov2gif="__mov2gif__"
 alias wifi="wifi-password -q"
 
 alias s="git status"
-compdef s="git"
+#compdef s="git"
 
-alias dotfiles="code ${HOME}/.dotfiles"
-function __choose_node_package_manager__() {
-  PM_VERSION=$(node -p 'require("./package.json").packageManager ?? ""' || echo '')
-  PM=$(echo $PM_VERSION | sed 's/@.*//g')
-  if [ -n "${PM}" ]; then
-    corepack enable
-    corepack prepare --activate
-    echo $PM
-  elif [ -f "package-lock.json" ]; then
-    echo npm
-  elif [ -f "yarn.lock" ]; then
-    echo yarn
-  else
-    echo pnpm
-  fi
-}
-function px() {
-  PM=$(__choose_node_package_manager__)
-  if [ "$PM" = "npm" ]; then
-    npx $*
-  elif [ "$PM" = "yarn" ]; then
-    yarn dlx $*
-  else
-    pnpx $*
-  fi
-}
-#compdef px="npx"
-
-function pm() {
-  PM=$(__choose_node_package_manager__)
-  if [ "$PM" = "npm" ]; then
-    npm $*
-  elif [ "$PM" = "yarn" ]; then
-    yarn $*
-  else
-    pnpm $*
-  fi
-}
-alias n="__choose_node_package_manager__"
-compdef n="pnpm"
+alias pm="pnpm"
+#compdef pm="pnpm"
 
 alias recommit="git commit --amend --no-edit"
-compdef recommit="git"
-
-alias ds="docker stack"
-compdef ds="docker"
+#compdef recommit="git"
 
 alias current-branch="git rev-parse --abbrev-ref HEAD"
-compdef current-branch=git
-function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
+#compdef current-branch=git
 
 function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
 alias push="__push__"
-compdef push=git
+#compdef push=git
 
 function __who-is-using__ { lsof -i :$1 }
 alias who-is-using="__who-is-using__"
 
-alias ni="n install"
-compdef ni=pnpm
-
-alias nr="n run"
-
 alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
-
-function __jssize__ { cat $1 | terser -c -m | gzip -c9n | wc -c }
-alias jssize="__jssize__"
-compdef jssize=cat
-
-alias copy-ssh-key="cat ~/.ssh/id_rsa.pub| pbcopy"
 
 function __dotenv__ { export $(grep -v '^#' ${1:-".env"} | xargs) }
 alias dotenv="__dotenv__"
@@ -85,16 +32,6 @@ alias dotenv="__dotenv__"
 function __dotenv-unset__ { unset $(grep -v '^#' ${1:-".env"} | sed -E 's/(.*)=.*/\1/' | xargs) }
 alias dotenv-unset="__dotenv-unset__"
 
-alias fix-uk-keyboard="hidutil property --set  '{
-  \"UserKeyMapping\": [
-    {
-      \"HIDKeyboardModifierMappingSrc\": 0x700000064,
-      \"HIDKeyboardModifierMappingDst\": 0x700000035
-    }
-  ]
-}'"
-
-alias tf="terraform"
 
 function __paste_as_html__ {
   osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*", pack("H*", substr($_, 11, -3)))'
@@ -103,27 +40,19 @@ alias pbpaste-html=__paste_as_html__
 
 alias fetch="git fetch -ap"
 #compdef fetch=git
+
 alias pull="git pull -r"
-compdef pull=git
+#compdef pull=git
+
 alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox -foreground"
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-alias home="cd ~"
-alias gpr="gh pr create"
 
-function __gi__ {
-  if [ "$#" -ne 1 ]; then
-    gh issue list
-  else
-    gh issue view $*
-  fi
-}
-alias gi="__gi__"
 
 function __quarantine__ { sudo xattr -r -d com.apple.quarantine $1 }
 alias quarantine="__quarantine__"
-alias tmux-shelly="tmux new-session -A -s shelly"
-compdef tmux-shelly=tmux
 
-alias preview="/Users/znck/Workspace/OpenSource/vuedx/preview/packages/preview/bin/preview.js"
+alias tmux-shelly="tmux new-session -A -s shelly"
+#compdef tmux-shelly=tmux
+
 alias nx="pnpm nx"
 #compdef nx=pnpm
