@@ -58,6 +58,14 @@ for package in "${BREW_PACKAGES[@]}"; do
     fi
 done
 
+for package in "${BREW_CASK_PACKAGES[@]}"; do
+    if ! $(brew list "${package}" &>/dev/null); then
+        echo ""
+        echo "# Installing ${package}"
+        brew install --cask "${package}"
+    fi
+done
+
 ## 5. Install node
 export N_PREFIX="$HOME/.n"
 export PATH="$N_PREFIX/bin:$PATH"
