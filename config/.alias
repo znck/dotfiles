@@ -131,4 +131,3 @@ __compdef__ tmux-shelly=tmux
 alias nx="pnpm nx"
 __compdef__ nx=pnpm
 
-alias pinentry='pinentry-mac'

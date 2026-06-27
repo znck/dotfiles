@@ -22,7 +22,7 @@ setup_brew_taps() {
   local tap
 
   info "Homebrew taps"
-  for tap in "${BREW_TAPS[@]}"; do
+  for tap in ${BREW_TAPS[@]+"${BREW_TAPS[@]}"}; do
     if brew tap | grep -qx "$tap"; then
       skip "$tap"
       continue
@@ -37,7 +37,7 @@ setup_brew_trust() {
   local tap
 
   info "Homebrew trust"
-  for tap in "${BREW_TAPS[@]}"; do
+  for tap in ${BREW_TAPS[@]+"${BREW_TAPS[@]}"}; do
     if brew trust --json v1 2>/dev/null | grep -q "\"$tap\""; then
       skip "$tap"
       continue
@@ -52,7 +52,7 @@ setup_brew_packages() {
   local package
 
   info "Homebrew packages"
-  for package in "${BREW_PACKAGES[@]}"; do
+  for package in ${BREW_PACKAGES[@]+"${BREW_PACKAGES[@]}"}; do
     if brew list "$package" >/dev/null 2>&1; then
       skip "$package"
       continue

@@ -11,28 +11,12 @@ setup_gpg() {
     skip "GPGTools defaults"
   fi
 
-  if has pinentry-touchid; then
-    setup_pinentry_touchid
-  fi
-
   if [ "$GPG_CHANGED" -eq 1 ] && has gpgconf; then
     step "restart gpg-agent"
     gpgconf --kill gpg-agent || true
   fi
 }
 
-setup_pinentry_touchid() {
-  local config
-  config="$HOME/.gnupg/gpg-agent.conf"
-
-  if [ -f "$config" ] && grep -q 'pinentry-touchid' "$config"; then
-    skip "pinentry-touchid"
-  else
-    step "pinentry-touchid"
-    pinentry-touchid -fix
-    GPG_CHANGED=1
-  fi
-}
 
 write_gpgtools_bool() {
   local key expected current
