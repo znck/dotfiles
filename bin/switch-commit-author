@@ -74,7 +74,7 @@ agent_signing_key() {
     return
   fi
 
-  if has gpg; then
+  if command -v gpg >/dev/null 2>&1; then
     gpg --list-secret-keys --with-colons "${AGENT_EMAIL}" 2>/dev/null | awk -F: '$1 == "fpr" { print $10; exit }'
   fi
 }
