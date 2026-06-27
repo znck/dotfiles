@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+
+AGENT_EMAIL="${ZNCK_AGENT_EMAIL:-295982911+znck-agent[bot]@users.noreply.github.com}"
+real_gh="/opt/homebrew/bin/gh"
+remote="${AGENT_GITHUB_REMOTE:-origin}"
+script_dir="${0:A:h}"
+
+if [[ ! -x "$real_gh" ]]; then
+  print -u2 "gh wrapper: expected GitHub CLI at $real_gh"
+  exit 127
+fi
+
+
+current_email() {
+  git config --get user.email 2>/dev/null || true
+}
+
+use_agent_mode() {
+  case "${ZNCK_AGENT_MODE:-}" in
+    1 | true | yes | agent) return 0 ;;
+  esac
+
+  [ "$(current_email)" = "${AGENT_EMAIL}" ]
+}
+
+if use_agent_mode; then
+  token="$("$script_dir/agent-github-token.mts" "$remote" 2>/dev/null)" || {
+    exec "$real_gh" "$@"
+  }
+
+  GH_TOKEN="$token" GITHUB_TOKEN= exec "$real_gh" "$@"
+else
+  exec "$real_gh" "$@"
+fi

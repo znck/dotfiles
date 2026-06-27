@@ -1,7 +1,102 @@
 #!/usr/bin/env bash
 
-DIR="$(dirname $(dirname ${0}))" # Get root directory.
+set -euo pipefail
 
-. "${DIR}/scripts/git.sh"
+confirm() {
+  while true; do
+    read -r -p "Continue? (y/n) " choice
+    case "$choice" in
+      y | Y | yes | YES | Yes) return 0 ;;
+      n | N | no | NO | No) return 1 ;;
+      *) echo "invalid" ;;
+    esac
+  done
+}
 
-clean_stale_branches $*
+worktree_for_branch() {
+  git worktree list --porcelain |
+    awk -v target="refs/heads/$1" '
+      /^worktree / { worktree = substr($0, 10) }
+      /^branch / && substr($0, 8) == target {
+        print worktree
+        exit
+      }
+    '
+}
+
+default_branch() {
+  local branch remote
+  remote="$(git remote 2>/dev/null | head -n 1)"
+
+  if [ -n "$remote" ]; then
+    branch="$(
+      git remote show "$remote" 2>/dev/null |
+        awk -F': ' '/HEAD branch/ { print $2; exit }'
+    )"
+    if [ -n "$branch" ]; then
+      echo "$branch"
+      return
+    fi
+  fi
+
+  git branch --show-current 2>/dev/null || true
+}
+
+echo git fetch -ap "$@"
+git fetch -ap "$@"
+
+default_branch="$(default_branch)"
+
+gone=()
+while IFS= read -r branch; do
+  gone+=("$branch")
+done < <(
+  git branch --format '%(refname:short) %(upstream:track)' |
+    awk -v default_branch="$default_branch" '$1 != default_branch' |
+    grep 'gone' |
+    awk '{print $1}'
+)
+
+not_tracking=()
+while IFS= read -r branch; do
+  not_tracking+=("$branch")
+done < <(
+  git branch --format '%(refname:short) %(upstream:short) %(upstream:track)' |
+    awk -v default_branch="$default_branch" '$1 != default_branch' |
+    awk 'NF == 1 {print $1}'
+)
+
+if [ "${#gone[@]}" -gt 0 ]; then
+  echo "Stale branches:"
+  deletable=()
+  for branch in "${gone[@]}"; do
+    worktree="$(worktree_for_branch "$branch")"
+    if [ -n "$worktree" ]; then
+      printf ' - %s (checked out at %s, skipping)\n' "$branch" "$worktree"
+    else
+      printf ' - %s\n' "$branch"
+      deletable+=("$branch")
+    fi
+  done
+
+  if [ "${#deletable[@]}" -gt 0 ]; then
+    confirm && git branch -D "${deletable[@]}"
+  fi
+  echo
+fi
+
+if [ "${#not_tracking[@]}" -gt 0 ]; then
+  echo "Untracked branches:"
+  for branch in "${not_tracking[@]}"; do
+    worktree="$(worktree_for_branch "$branch")"
+    if [ -n "$worktree" ]; then
+      echo "Skip: ${branch} is checked out at ${worktree}"
+      echo
+      continue
+    fi
+
+    echo "Delete: ${branch}"
+    confirm && git branch -D "${branch}"
+    echo
+  done
+fi
