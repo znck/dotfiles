@@ -4,6 +4,7 @@ set -euo pipefail
 
 AGENT_NAME="${ZNCK_AGENT_NAME:-znck-agent[bot]}"
 AGENT_EMAIL="${ZNCK_AGENT_EMAIL:-295982911+znck-agent[bot]@users.noreply.github.com}"
+AGENT_SIGNING_KEY="${ZNCK_AGENT_GPG_SIGNING_KEY:-}"
 NULL_REF="0000000000000000000000000000000000000000"
 MANAGED_MARKER="znck-agent commit author hook"
 REMOTE="${AGENT_GITHUB_REMOTE:-origin}"
@@ -59,6 +60,25 @@ local_email() {
   git config --local --get user.email 2>/dev/null || true
 }
 
+local_signing_key() {
+  git config --local --get user.signingkey 2>/dev/null || true
+}
+
+worktree_signing_key() {
+  git config --worktree --get user.signingkey 2>/dev/null || true
+}
+
+agent_signing_key() {
+  if [ -n "${AGENT_SIGNING_KEY}" ]; then
+    printf '%s\n' "${AGENT_SIGNING_KEY}"
+    return
+  fi
+
+  if has gpg; then
+    gpg --list-secret-keys --with-colons "${AGENT_EMAIL}" 2>/dev/null | awk -F: '$1 == "fpr" { print $10; exit }'
+  fi
+}
+
 github_https_url() {
   local url path
   url="${1}"
@@ -105,14 +125,23 @@ unset_agent_push() {
 }
 
 unset_agent_author() {
+  local signing_key
+  signing_key="$(agent_signing_key)"
+
   git config --worktree --unset user.name >/dev/null 2>&1 || true
   git config --worktree --unset user.email >/dev/null 2>&1 || true
+  if [ -n "${signing_key}" ] && [ "$(worktree_signing_key)" = "${signing_key}" ]; then
+    git config --worktree --unset user.signingkey >/dev/null 2>&1 || true
+  fi
 
   if [ "$(local_name)" = "${AGENT_NAME}" ]; then
     git config --local --unset user.name >/dev/null 2>&1 || true
   fi
   if [ "$(local_email)" = "${AGENT_EMAIL}" ]; then
     git config --local --unset user.email >/dev/null 2>&1 || true
+  fi
+  if [ -n "${signing_key}" ] && [ "$(local_signing_key)" = "${signing_key}" ]; then
+    git config --local --unset user.signingkey >/dev/null 2>&1 || true
   fi
 }
 
@@ -153,11 +182,25 @@ fi
 
 git config extensions.worktreeConfig true >/dev/null 2>&1 || true
 
+signing_key="\$(ZNCK_AGENT_EMAIL='${AGENT_EMAIL}' ZNCK_AGENT_GPG_SIGNING_KEY='${AGENT_SIGNING_KEY}' sh -c '
+if [ -n "\${ZNCK_AGENT_GPG_SIGNING_KEY:-}" ]; then
+  printf "%s\n" "\${ZNCK_AGENT_GPG_SIGNING_KEY}"
+elif command -v gpg >/dev/null 2>&1; then
+  gpg --list-secret-keys --with-colons "\${ZNCK_AGENT_EMAIL}" 2>/dev/null | awk -F: '"'"'\$1 == "fpr" { print \$10; exit }'"'"'
+fi
+')"
+
 if git config --worktree user.name '${AGENT_NAME}' >/dev/null 2>&1; then
   git config --worktree user.email '${AGENT_EMAIL}'
+  if [ -n "\$signing_key" ]; then
+    git config --worktree user.signingkey "\$signing_key"
+  fi
 else
   git config user.name '${AGENT_NAME}'
   git config user.email '${AGENT_EMAIL}'
+  if [ -n "\$signing_key" ]; then
+    git config user.signingkey "\$signing_key"
+  fi
 fi
 
 remote="\${AGENT_GITHUB_REMOTE:-origin}"
@@ -188,11 +231,12 @@ remove_agent_hook() {
 }
 
 show_status() {
-  local name email default_name default_email
+  local name email default_name default_email signing_key
   name="$(current_name)"
   email="$(current_email)"
   default_name="$(global_name)"
   default_email="$(global_email)"
+  signing_key="$(git config --get user.signingkey 2>/dev/null || true)"
 
   if [ "${name}" = "${default_name}" ] && [ "${email}" = "${default_email}" ]; then
     echo "user: ${name} <${email}>"
@@ -201,16 +245,26 @@ show_status() {
   else
     echo "custom: ${name} <${email}>"
   fi
+  if [ -n "${signing_key}" ]; then
+    echo "signing-key: ${signing_key}"
+  fi
 }
 
 case "${mode}" in
   agent)
+    signing_key="$(agent_signing_key)"
     git config extensions.worktreeConfig true
     git config --worktree user.name "${AGENT_NAME}"
     git config --worktree user.email "${AGENT_EMAIL}"
+    if [ -n "${signing_key}" ]; then
+      git config --worktree user.signingkey "${signing_key}"
+    fi
     configure_agent_push
     install_agent_hook
     echo "agent: ${AGENT_NAME} <${AGENT_EMAIL}>"
+    if [ -n "${signing_key}" ]; then
+      echo "signing-key: ${signing_key}"
+    fi
     git config --get "remote.${REMOTE}.pushurl" | sed 's/^/push: /'
     echo "installed: ${hook_file}"
     export GH_COMMIT_AUTHOR="agent"

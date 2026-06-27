@@ -1,6 +1,7 @@
 export ZNCK_AGENT_PRIVATE_KEY_PATH="$HOME/.config/znck-agent/private-key.pem"
 export ZNCK_AGENT_NAME="znck-agent[bot]"
 export ZNCK_AGENT_EMAIL="295982911+znck-agent[bot]@users.noreply.github.com"
+export ZNCK_AGENT_GPG_SIGNING_KEY="4AD14F73D84E698DAB9C0038BDE4126127351CF7"
 export DOTFILES="${HOME}/.dotfiles"
 
 export LANG=en_US.UTF-8

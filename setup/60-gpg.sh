@@ -5,8 +5,8 @@ setup_gpg() {
   GPG_CHANGED=0
 
   if has defaults; then
-    write_gpgtools_bool DisableKeychain yes
-    write_gpgtools_bool UseKeychain no
+    write_gpgtools_bool DisableKeychain no
+    write_gpgtools_bool UseKeychain yes
   else
     skip "GPGTools defaults"
   fi
