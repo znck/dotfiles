@@ -78,6 +78,16 @@ if [ "$command_name" = "commit" ] && use_agent_mode; then
   fi
 
   env "${commit_env[@]}" "$real_git" "${pre_args[@]+"${pre_args[@]}"}" "${commit_config[@]}" commit "${rest_args[@]+"${rest_args[@]}"}"
+elif [ "$command_name" = "push" ] && use_agent_mode; then
+  rest_args=("${args[@]:$((command_index + 1))}")
+  push_config=(
+    -c "url.https://github.com/.pushInsteadOf=git@github.com:"
+    -c "url.https://github.com/.pushInsteadOf=ssh://git@github.com/"
+    -c "credential.https://github.com.helper="
+    -c "credential.https://github.com.helper=!agent-git-credential"
+  )
+
+  env GH_TOKEN= GITHUB_TOKEN= "$real_git" "${pre_args[@]+"${pre_args[@]}"}" "${push_config[@]}" push "${rest_args[@]+"${rest_args[@]}"}"
 else
   exec "$real_git" "$@"
 fi
