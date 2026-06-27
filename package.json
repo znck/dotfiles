@@ -1,0 +1,15 @@
+{
+  "private": "true",
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^24.13.2",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": "^24.13.2"
+  }
+}

@@ -1,11 +1,16 @@
 [user]
-	email = hi@znck.me
+	email = 2596484+znck@users.noreply.github.com
 	name = Rahul Kadyan
 	signingkey = 496041D243818206D62CC2DF21AF5D4A08BA995B
 
 [core]
 	autocrlf = input
 	excludesfile = ~/.gitignore
+	ignorecase = false
+
+[credential "https://github.com"]
+	helper = !agent-git-credential
+	helper = "!f() { unset GH_TOKEN GITHUB_TOKEN; /opt/homebrew/bin/gh auth git-credential \"$@\"; }; f"
 
 [commit]
 	gpgsign = true
@@ -21,8 +26,9 @@
 
 [alias]
   pr = pull-request
-  cb = clean-branch
   clean-branch = !clean-stale-branches
+  cb = clean-branch
+  acts = !switch-commit-author
 
 [init]
 	defaultBranch = main

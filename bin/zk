@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+if [ -n "$root" ] && [ -x "$root/zk" ]; then
+  exec "$root/zk" "$@"
+fi
+
+if [ -n "$root" ] && [ -x "$root/node_modules/.bin/zk" ]; then
+  exec "$root/node_modules/.bin/zk" "$@"
+fi
+
+printf 'zk: no executable ./zk or node_modules/.bin/zk found at repository root\n' >&2
+exit 127

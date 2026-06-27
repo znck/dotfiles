@@ -1,0 +1,294 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+AGENT_NAME="${ZNCK_AGENT_NAME:-znck-agent[bot]}"
+AGENT_EMAIL="${ZNCK_AGENT_EMAIL:-295982911+znck-agent[bot]@users.noreply.github.com}"
+AGENT_SIGNING_KEY="${ZNCK_AGENT_GPG_SIGNING_KEY:-}"
+NULL_REF="0000000000000000000000000000000000000000"
+MANAGED_MARKER="znck-agent commit author hook"
+REMOTE="${AGENT_GITHUB_REMOTE:-origin}"
+
+usage() {
+  cat <<'USAGE'
+Usage: switch-commit-author <agent|user|status|toggle>
+
+Switch the current Git checkout between the default user author and the
+personal znck-agent bot author.
+USAGE
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  usage
+  exit 0
+fi
+
+mode="${1:-status}"
+
+if ! git_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  echo "switch-commit-author: not inside a Git repository" >&2
+  exit 1
+fi
+
+cd "${git_root}"
+
+hook_dir="$(git rev-parse --git-path hooks)"
+hook_file="${hook_dir}/post-checkout"
+previous_hook="${hook_dir}/post-checkout.before-agent-author"
+
+current_name() {
+  git config --get user.name 2>/dev/null || true
+}
+
+current_email() {
+  git config --get user.email 2>/dev/null || true
+}
+
+global_name() {
+  git config --global --get user.name 2>/dev/null || true
+}
+
+global_email() {
+  git config --global --get user.email 2>/dev/null || true
+}
+
+local_name() {
+  git config --local --get user.name 2>/dev/null || true
+}
+
+local_email() {
+  git config --local --get user.email 2>/dev/null || true
+}
+
+local_signing_key() {
+  git config --local --get user.signingkey 2>/dev/null || true
+}
+
+worktree_signing_key() {
+  git config --worktree --get user.signingkey 2>/dev/null || true
+}
+
+agent_signing_key() {
+  if [ -n "${AGENT_SIGNING_KEY}" ]; then
+    printf '%s\n' "${AGENT_SIGNING_KEY}"
+    return
+  fi
+
+  if command -v gpg >/dev/null 2>&1; then
+    gpg --list-secret-keys --with-colons "${AGENT_EMAIL}" 2>/dev/null | awk -F: '$1 == "fpr" { print $10; exit }'
+  fi
+}
+
+github_https_url() {
+  local url path
+  url="${1}"
+
+  case "${url}" in
+    git@github.com:*) path="${url#git@github.com:}" ;;
+    ssh://git@github.com/*) path="${url#ssh://git@github.com/}" ;;
+    https://github.com/*) path="${url#https://github.com/}" ;;
+    *) return 1 ;;
+  esac
+
+  path="${path%.git}"
+  printf 'https://github.com/%s.git\n' "${path}"
+}
+
+configure_agent_push() {
+  local url push_url current_push_url backup_key
+  backup_key="znck-agent.previous-pushurl.${REMOTE}"
+
+  url="$(git remote get-url "${REMOTE}" 2>/dev/null)" || return 0
+  push_url="$(github_https_url "${url}")" || return 0
+  current_push_url="$(git config --get "remote.${REMOTE}.pushurl" 2>/dev/null || true)"
+
+  if [ -n "${current_push_url}" ] && [ "${current_push_url}" != "${push_url}" ]; then
+    git config --worktree "${backup_key}" "${current_push_url}" >/dev/null 2>&1 || true
+  fi
+
+  git config --worktree "remote.${REMOTE}.pushurl" "${push_url}" >/dev/null 2>&1 || \
+    git remote set-url --push "${REMOTE}" "${push_url}" >/dev/null 2>&1 || true
+}
+
+unset_agent_push() {
+  local backup_key previous_push_url
+  backup_key="znck-agent.previous-pushurl.${REMOTE}"
+  previous_push_url="$(git config --get "${backup_key}" 2>/dev/null || true)"
+
+  git config --worktree --unset-all "remote.${REMOTE}.pushurl" >/dev/null 2>&1 || true
+
+  if [ -n "${previous_push_url}" ]; then
+    git config --worktree "remote.${REMOTE}.pushurl" "${previous_push_url}" >/dev/null 2>&1 || \
+      git remote set-url --push "${REMOTE}" "${previous_push_url}" >/dev/null 2>&1 || true
+    git config --worktree --unset-all "${backup_key}" >/dev/null 2>&1 || true
+  fi
+}
+
+unset_agent_author() {
+  local signing_key
+  signing_key="$(agent_signing_key)"
+
+  git config --worktree --unset user.name >/dev/null 2>&1 || true
+  git config --worktree --unset user.email >/dev/null 2>&1 || true
+  if [ -n "${signing_key}" ] && [ "$(worktree_signing_key)" = "${signing_key}" ]; then
+    git config --worktree --unset user.signingkey >/dev/null 2>&1 || true
+  fi
+
+  if [ "$(local_name)" = "${AGENT_NAME}" ]; then
+    git config --local --unset user.name >/dev/null 2>&1 || true
+  fi
+  if [ "$(local_email)" = "${AGENT_EMAIL}" ]; then
+    git config --local --unset user.email >/dev/null 2>&1 || true
+  fi
+  if [ -n "${signing_key}" ] && [ "$(local_signing_key)" = "${signing_key}" ]; then
+    git config --local --unset user.signingkey >/dev/null 2>&1 || true
+  fi
+}
+
+install_agent_hook() {
+  mkdir -p "${hook_dir}"
+
+  if [ -f "${hook_file}" ] && ! grep -q "${MANAGED_MARKER}" "${hook_file}"; then
+    if [ -e "${previous_hook}" ]; then
+      previous_hook="${hook_dir}/post-checkout.before-agent-author.$(date +%Y%m%d%H%M%S)"
+    fi
+    mv "${hook_file}" "${previous_hook}"
+  fi
+
+  cat > "${hook_file}" <<HOOK
+#!/bin/sh
+set -eu
+
+# ${MANAGED_MARKER}
+
+previous_hook="\$(dirname "\$0")/$(basename "${previous_hook}")"
+if [ -x "\$previous_hook" ]; then
+  "\$previous_hook" "\$@"
+fi
+
+old_ref="\${1:-}"
+checkout_kind="\${3:-}"
+null_ref="${NULL_REF}"
+
+if [ "\$checkout_kind" != "1" ] || [ "\$old_ref" != "\$null_ref" ]; then
+  exit 0
+fi
+
+git_dir="\$(git rev-parse --git-dir)"
+common_dir="\$(git rev-parse --git-common-dir)"
+if [ "\$git_dir" = "\$common_dir" ]; then
+  exit 0
+fi
+
+git config extensions.worktreeConfig true >/dev/null 2>&1 || true
+
+signing_key="\$(ZNCK_AGENT_EMAIL='${AGENT_EMAIL}' ZNCK_AGENT_GPG_SIGNING_KEY='${AGENT_SIGNING_KEY}' sh -c '
+if [ -n "\${ZNCK_AGENT_GPG_SIGNING_KEY:-}" ]; then
+  printf "%s\n" "\${ZNCK_AGENT_GPG_SIGNING_KEY}"
+elif command -v gpg >/dev/null 2>&1; then
+  gpg --list-secret-keys --with-colons "\${ZNCK_AGENT_EMAIL}" 2>/dev/null | awk -F: '"'"'\$1 == "fpr" { print \$10; exit }'"'"'
+fi
+')"
+
+if git config --worktree user.name '${AGENT_NAME}' >/dev/null 2>&1; then
+  git config --worktree user.email '${AGENT_EMAIL}'
+  if [ -n "\$signing_key" ]; then
+    git config --worktree user.signingkey "\$signing_key"
+  fi
+else
+  git config user.name '${AGENT_NAME}'
+  git config user.email '${AGENT_EMAIL}'
+  if [ -n "\$signing_key" ]; then
+    git config user.signingkey "\$signing_key"
+  fi
+fi
+
+remote="\${AGENT_GITHUB_REMOTE:-origin}"
+url="\$(git remote get-url "\$remote" 2>/dev/null || true)"
+case "\$url" in
+  git@github.com:*) path="\${url#git@github.com:}" ;;
+  ssh://git@github.com/*) path="\${url#ssh://git@github.com/}" ;;
+  https://github.com/*) path="\${url#https://github.com/}" ;;
+  *) exit 0 ;;
+esac
+path="\${path%.git}"
+git config --worktree "remote.\${remote}.pushurl" "https://github.com/\${path}.git" >/dev/null 2>&1 || true
+HOOK
+
+  chmod +x "${hook_file}"
+}
+
+remove_agent_hook() {
+  if [ ! -f "${hook_file}" ] || ! grep -q "${MANAGED_MARKER}" "${hook_file}"; then
+    return
+  fi
+
+  rm -f "${hook_file}"
+  if [ -f "${previous_hook}" ]; then
+    mv "${previous_hook}" "${hook_file}"
+    chmod +x "${hook_file}"
+  fi
+}
+
+show_status() {
+  local name email default_name default_email signing_key
+  name="$(current_name)"
+  email="$(current_email)"
+  default_name="$(global_name)"
+  default_email="$(global_email)"
+  signing_key="$(git config --get user.signingkey 2>/dev/null || true)"
+
+  if [ "${name}" = "${default_name}" ] && [ "${email}" = "${default_email}" ]; then
+    echo "user: ${name} <${email}>"
+  elif [ "${name}" = "${AGENT_NAME}" ] && [ "${email}" = "${AGENT_EMAIL}" ]; then
+    echo "agent: ${name} <${email}>"
+  else
+    echo "custom: ${name} <${email}>"
+  fi
+  if [ -n "${signing_key}" ]; then
+    echo "signing-key: ${signing_key}"
+  fi
+}
+
+case "${mode}" in
+  agent)
+    signing_key="$(agent_signing_key)"
+    git config extensions.worktreeConfig true
+    git config --worktree user.name "${AGENT_NAME}"
+    git config --worktree user.email "${AGENT_EMAIL}"
+    if [ -n "${signing_key}" ]; then
+      git config --worktree user.signingkey "${signing_key}"
+    fi
+    configure_agent_push
+    install_agent_hook
+    echo "agent: ${AGENT_NAME} <${AGENT_EMAIL}>"
+    if [ -n "${signing_key}" ]; then
+      echo "signing-key: ${signing_key}"
+    fi
+    git config --get "remote.${REMOTE}.pushurl" | sed 's/^/push: /'
+    echo "installed: ${hook_file}"
+    export GH_COMMIT_AUTHOR="agent"
+    ;;
+  user)
+    git config extensions.worktreeConfig true
+    unset_agent_push
+    unset_agent_author
+    remove_agent_hook
+    echo "user: $(global_name) <$(global_email)>"
+    export GH_COMMIT_AUTHOR="user"
+    ;;
+  toggle)
+    if [ "$(current_name)" = "${AGENT_NAME}" ] && [ "$(current_email)" = "${AGENT_EMAIL}" ]; then
+      "$0" user
+    else
+      "$0" agent
+    fi
+    ;;
+  status)
+    show_status
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

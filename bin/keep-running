@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$#" -eq 0 ]; then
+  echo "Usage: keep-running <command> [args...]" >&2
+  exit 2
+fi
+
+echo "Command: $*"
+
+until "$@"; do
+  echo "Process interrupted. Restarting in 3s..."
+  sleep 3
+done

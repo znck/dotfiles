@@ -1,3 +1,0 @@
-#!/usr/bin/env -S sh
-
-deno -q run --allow-read=$PWD --import-map=${HOME}/.dotfiles/deno/deps.json $@

@@ -1,37 +1,106 @@
-#!/usr/bin/env sh
+#!/usr/bin/env zsh
 
-function __mov2gif__ { ffmpeg -i $1 -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 }
-alias mov2gif="__mov2gif__"
+function __compdef__ {
+  if (( $+functions[compdef] )); then
+    compdef "$@" 2>/dev/null
+  fi
+}
 
 alias wifi="wifi-password -q"
 
 alias s="git status"
-#compdef s="git"
+__compdef__ s="git"
 
-alias pm="pnpm"
-#compdef pm="pnpm"
+alias dotfiles="code ${HOME}/.dotfiles"
+
+function __choose_node_package_manager__() {
+  local PM PM_VERSION
+  PM_VERSION=$(node -p 'require("./package.json").packageManager ?? ""' 2>/dev/null || echo '')
+  PM=$(echo "$PM_VERSION" | sed 's/@.*//g')
+
+  if [ -n "$PM" ]; then
+    corepack enable
+    corepack prepare --activate
+    echo "$PM"
+  elif [ -f "package-lock.json" ]; then
+    echo npm
+  elif [ -f "yarn.lock" ]; then
+    echo yarn
+  else
+    echo pnpm
+  fi
+}
+
+function px() {
+  local PM
+  PM=$(__choose_node_package_manager__)
+  if [ "$PM" = "npm" ]; then
+    npx "$@"
+  elif [ "$PM" = "yarn" ]; then
+    yarn dlx "$@"
+  else
+    pnpx "$@"
+  fi
+}
+__compdef__ px=npx
+
+function pm() {
+  local PM
+  PM=$(__choose_node_package_manager__)
+  if [ "$PM" = "npm" ]; then
+    npm "$@"
+  elif [ "$PM" = "yarn" ]; then
+    yarn "$@"
+  else
+    pnpm "$@"
+  fi
+}
 
 alias recommit="git commit --amend --no-edit"
-#compdef recommit="git"
+__compdef__ recommit="git"
 
 alias current-branch="git rev-parse --abbrev-ref HEAD"
-#compdef current-branch=git
+__compdef__ current-branch=git
+function __push__ {
+  local remote
+  if git remote | grep -qx znck; then
+    remote=znck
+  else
+    remote=origin
+  fi
 
-function __push__ { git push $* $([[ $(git remote | grep znck) = 'znck' ]] && echo 'znck' || echo 'origin') $(current-branch) }
+  git push "$@" "$remote" "$(current-branch)"
+}
 alias push="__push__"
-#compdef push=git
+__compdef__ push=git
 
-function __who-is-using__ { lsof -i :$1 }
+function __who-is-using__ { lsof -i :"$1" }
 alias who-is-using="__who-is-using__"
 
 alias p="prettier --no-semi --single-quote --trailing-comma 'es5'  --write"
 
-function __dotenv__ { export $(grep -v '^#' ${1:-".env"} | xargs) }
+function __jssize__ { terser -c -m "$1" | gzip -c9n | wc -c }
+alias jssize="__jssize__"
+__compdef__ jssize=cat
+
+alias copy-ssh-key="pbcopy < ~/.ssh/id_ed25519.pub"
+
+function __dotenv__ { export $(grep -v '^#' "${1:-".env"}" | xargs) }
 alias dotenv="__dotenv__"
 
-function __dotenv-unset__ { unset $(grep -v '^#' ${1:-".env"} | sed -E 's/(.*)=.*/\1/' | xargs) }
+function __dotenv-unset__ { unset $(grep -v '^#' "${1:-".env"}" | sed -E 's/(.*)=.*/\1/' | xargs) }
 alias dotenv-unset="__dotenv-unset__"
 
+alias fix-uk-keyboard="hidutil property --set  '{
+  \"UserKeyMapping\": [
+    {
+      \"HIDKeyboardModifierMappingSrc\": 0x700000064,
+      \"HIDKeyboardModifierMappingDst\": 0x700000035
+    }
+  ]
+}'"
+
+alias tf="terraform"
 
 function __paste_as_html__ {
   osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*", pack("H*", substr($_, 11, -3)))'
@@ -39,20 +108,26 @@ function __paste_as_html__ {
 alias pbpaste-html=__paste_as_html__
 
 alias fetch="git fetch -ap"
-#compdef fetch=git
-
+__compdef__ fetch=git
 alias pull="git pull -r"
-#compdef pull=git
+__compdef__ pull=git
+alias home="cd ~"
+alias gpr="gh pr create"
 
-alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox -foreground"
-alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+function __gi__ {
+  if [ "$#" -ne 1 ]; then
+    gh issue list
+  else
+    gh issue view "$@"
+  fi
+}
+alias gi="__gi__"
 
-
-function __quarantine__ { sudo xattr -r -d com.apple.quarantine $1 }
+function __quarantine__ { sudo xattr -r -d com.apple.quarantine "$1" }
 alias quarantine="__quarantine__"
-
 alias tmux-shelly="tmux new-session -A -s shelly"
-#compdef tmux-shelly=tmux
+__compdef__ tmux-shelly=tmux
 
 alias nx="pnpm nx"
-#compdef nx=pnpm
+__compdef__ nx=pnpm
+
