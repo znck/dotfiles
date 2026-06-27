@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+AGENT_NAME="${ZNCK_AGENT_NAME:-znck-agent[bot]}"
+AGENT_EMAIL="${ZNCK_AGENT_EMAIL:-295982911+znck-agent[bot]@users.noreply.github.com}"
+AGENT_SIGNING_KEY="${ZNCK_AGENT_GPG_SIGNING_KEY:-}"
+real_git="/usr/bin/git"
+
+if [ ! -x "$real_git" ]; then
+  echo "git wrapper: expected Git at $real_git" >&2
+  exit 127
+fi
+
+use_agent_mode() {
+  case "${ZNCK_AGENT_MODE:-}" in
+    1 | true | yes | agent) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+args=("$@")
+pre_args=()
+command_name=""
+command_index=0
+
+i=0
+while (( i < ${#args[@]} )); do
+  arg="${args[$i]}"
+
+  case "$arg" in
+    -C|-c|--config-env|--exec-path|--git-dir|--work-tree|--namespace|--super-prefix)
+      pre_args+=("$arg")
+      i=$((i + 1))
+      if (( i < ${#args[@]} )); then
+        pre_args+=("${args[$i]}")
+      fi
+      ;;
+    --exec-path=*|--git-dir=*|--work-tree=*|--namespace=*|--super-prefix=*)
+      pre_args+=("$arg")
+      ;;
+    --bare|--no-pager|--paginate|--no-replace-objects|--literal-pathspecs|--glob-pathspecs|--noglob-pathspecs|--icase-pathspecs)
+      pre_args+=("$arg")
+      ;;
+    --)
+      pre_args+=("$arg")
+      ;;
+    -*)
+      pre_args+=("$arg")
+      ;;
+    *)
+      command_name="$arg"
+      command_index="$i"
+      break
+      ;;
+  esac
+
+  i=$((i + 1))
+done
+
+if [ "$command_name" = "commit" ] && use_agent_mode; then
+  rest_args=("${args[@]:$((command_index + 1))}")
+
+  commit_env=(
+    GIT_AUTHOR_NAME="$AGENT_NAME"
+    GIT_AUTHOR_EMAIL="$AGENT_EMAIL"
+    GIT_COMMITTER_NAME="$AGENT_NAME"
+    GIT_COMMITTER_EMAIL="$AGENT_EMAIL"
+  )
+
+  commit_config=(
+    -c "user.name=$AGENT_NAME"
+    -c "user.email=$AGENT_EMAIL"
+  )
+
+  if [ -n "$AGENT_SIGNING_KEY" ]; then
+    commit_config+=(-c "user.signingkey=$AGENT_SIGNING_KEY")
+  fi
+
+  env "${commit_env[@]}" "$real_git" "${pre_args[@]+"${pre_args[@]}"}" "${commit_config[@]}" commit "${rest_args[@]+"${rest_args[@]}"}"
+else
+  exec "$real_git" "$@"
+fi
