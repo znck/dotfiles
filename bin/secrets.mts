@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
-import { execFile as execFileCallback } from "node:child_process";
+import { execFile as execFileCallback, type ExecFileException } from "node:child_process";
 import { access, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { env, argv, cwd, exit, stdin } from "node:process";
+import { env, argv, cwd, exit, stdin, stdout } from "node:process";
 import { Buffer } from "node:buffer";
 import { promisify } from "node:util";
 
 const execFile = promisify(execFileCallback);
+const encodedSecretPrefix = "znck-secrets:v1:";
 
 type Options = {
   key?: string;
@@ -27,6 +28,7 @@ function help() {
 Commands:
   save [filename]    save a secret file in keychain
   load [filename]    load keychain item
+  read [filename]    read keychain item to stdout
   ls                 list keychain items
   rm --key <key>     remove keychain item
   save-all           save all listed secret files in keychain
@@ -120,8 +122,31 @@ async function security(args: string[]) {
   return stdout;
 }
 
+function stripSecurityLineEnding(contents: string) {
+  if (contents.endsWith("\r\n")) return contents.slice(0, -2);
+  if (contents.endsWith("\n")) return contents.slice(0, -1);
+  return contents;
+}
+
+function encodeSecret(contents: string) {
+  return `${encodedSecretPrefix}${Buffer.from(contents, "utf8").toString("base64")}`;
+}
+
+function decodeSecret(contents: string) {
+  const encoded = stripSecurityLineEnding(contents);
+  if (!encoded.startsWith(encodedSecretPrefix)) return encoded;
+  return Buffer.from(encoded.slice(encodedSecretPrefix.length), "base64").toString("utf8");
+}
+
 async function syncKeychain(keychain: string) {
-  await execFile("/usr/bin/fileproviderctl", ["evaluate", keychain]);
+  try {
+    await execFile("/usr/bin/fileproviderctl", ["evaluate", keychain]);
+  } catch (error) {
+    const stderr =
+      typeof error === "object" && error != null && "stderr" in error ? String((error as ExecFileException).stderr) : "";
+    if (stderr.includes("No item for URL") || stderr.includes("NSFileProviderErrorDomain Code=-1005")) return;
+    throw error;
+  }
 }
 
 function keychainPath() {
@@ -150,7 +175,7 @@ async function deleteSecret(keychain: string, key: string, ignoreMissing = false
 }
 
 async function findSecret(keychain: string, key: string) {
-  return security(securityArgs(["find-generic-password", "-a", "", "-s", key, "-w", "-C", "note"], keychain));
+  return decodeSecret(await security(securityArgs(["find-generic-password", "-a", "", "-s", key, "-w", "-C", "note"], keychain)));
 }
 
 async function addSecret(keychain: string, key: string, contents: string) {
@@ -163,7 +188,7 @@ async function addSecret(keychain: string, key: string, contents: string) {
         "-s",
         key,
         "-w",
-        contents,
+        encodeSecret(contents),
         "-C",
         "note",
         "-T",
@@ -203,7 +228,7 @@ async function loadSecret(keychain: string, filename: string | undefined, key?: 
   const contents = await findSecret(keychain, key);
 
   if (filename == null || filename === "-") {
-    console.log(contents);
+    stdout.write(contents);
     return;
   }
 
@@ -220,6 +245,17 @@ async function loadSecret(keychain: string, filename: string | undefined, key?: 
 
   await rm(outfile, { force: true });
   await writeFile(outfile, contents, { mode });
+}
+
+async function readSecret(keychain: string, filename: string | undefined, key?: string) {
+  if (filename == null || filename === "-") {
+    if (key == null) throw new Error("--key is required when writing to stdout");
+  } else {
+    key = key ?? keyForFilename(filename);
+  }
+
+  const contents = await findSecret(keychain, key);
+  stdout.write(contents);
 }
 
 async function main() {
@@ -240,6 +276,10 @@ async function main() {
 
     case "load":
       await loadSecret(keychain, parsed.values[0], parsed.options.key);
+      break;
+
+    case "read":
+      await readSecret(keychain, parsed.values[0], parsed.options.key);
       break;
 
     case "ls": {
