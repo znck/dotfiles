@@ -29,7 +29,8 @@ Commands:
   load [filename]    load keychain item
   ls                 list keychain items
   rm --key <key>     remove keychain item
-  update-all         update secrets in keychain from local files
+  save-all           save all listed secret files in keychain
+  load-all           load all listed keychain items to local files
 
 Options:
   -k, --key <key>    name of keychain item
@@ -117,6 +118,10 @@ async function security(args: string[]) {
   });
 
   return stdout;
+}
+
+async function syncKeychain(keychain: string) {
+  await execFile("/usr/bin/fileproviderctl", ["evaluate", keychain]);
 }
 
 function keychainPath() {
@@ -226,6 +231,7 @@ async function main() {
   }
 
   const keychain = keychainPath();
+  await syncKeychain(keychain);
 
   switch (parsed.command) {
     case "save":
@@ -247,13 +253,26 @@ async function main() {
       await deleteSecret(keychain, parsed.options.key);
       break;
 
-    case "update-all": {
+    case "save-all": {
       const items = await listSecrets(keychain);
 
       for (const item of items) {
         const filename = item.replace("~", home());
-        console.log(`Updating "${item}" from "${filename}"`);
+        console.log(`Saving "${item}" from "${filename}"`);
         await saveSecret(keychain, filename, item);
+      }
+
+      if (items.length === 0) console.warn("No secrets");
+      break;
+    }
+
+    case "load-all": {
+      const items = await listSecrets(keychain);
+
+      for (const item of items) {
+        const filename = item.replace("~", home());
+        console.log(`Loading "${item}" to "${filename}"`);
+        await loadSecret(keychain, filename, item);
       }
 
       if (items.length === 0) console.warn("No secrets");
